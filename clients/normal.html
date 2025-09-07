@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Normal Side</title>
+</head>
+<body>
+  <h2>Normal Side (this peer is just a regular video call)</h2>
+  <video id="localVideo" autoplay playsinline muted width="320"></video>
+  <video id="remoteVideo" autoplay playsinline width="320"></video>
+  <div id="label" style="font-size:22px; color:blue; margin-top:8px"></div>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script>
+    const SIGNALING_SERVER = "http://localhost:5000";
+    const ROOM = "testroom";
+    const socket = io(SIGNALING_SERVER);
+
+    let pc;
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+    const labelDiv = document.getElementById("label");
+
+    socket.on("connect", () => {
+      socket.emit("join", { room: ROOM });
+    });
+
+    socket.on("offer", async (msg) => {
+      pc = new RTCPeerConnection();
+      pc.ontrack = (e) => {
+        remoteVideo.srcObject = e.streams[0];
+      };
+      pc.onicecandidate = (evt) => {
+        if (evt.candidate) {
+          socket.emit("ice-candidate", { room: ROOM, candidate: evt.candidate });
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      localVideo.srcObject = stream;
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+
+      await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit("answer", { room: ROOM, sdp: pc.localDescription });
+    });
+
+    socket.on("answer", async (msg) => {
+      if (pc) {
+        await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+      }
+    });
+
+    socket.on("ice-candidate", async (msg) => {
+      if (msg.candidate && pc) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    });
+
+    socket.on("gesture", (data) => {
+      labelDiv.textContent = `Gesture: ${data.label} (${(data.score || 0).toFixed(2)})`;
+      setTimeout(() => (labelDiv.textContent = ""), 1800);
+    });
+  </script>
+</body>
+</html>
