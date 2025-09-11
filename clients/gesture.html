@@ -28,7 +28,7 @@
     });
 
     socket.on("gesture", (data) => {
-      labelDiv.textContent = `${data.label} (${(data.score || 0).toFixed(2)})`;
+      labelDiv.textContent = `Gesture: ${data.label} (${(data.score || 0).toFixed(2)})`;
       setTimeout(() => (labelDiv.textContent = ""), 1500);
     });
 

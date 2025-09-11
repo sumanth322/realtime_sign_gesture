@@ -1,0 +1,13 @@
+flax==0.10.4
+jax==0.4.34
+jaxlib==0.4.34
+tensorflow==2.15.1
+tensorflow-intel==2.15.1
+tensorflow-decision-forests==1.8.1
+tensorflow-hub==0.16.1
+packaging==23.1
+importlib_resources==6.5.2
+pandas==2.3.2
+ml-dtypes==0.3.2
+keras==2.15.0
+tf-keras==2.15.1
